@@ -75,6 +75,10 @@ const PlanAccordionItem: React.FunctionComponent< Props > = ( {
 		! disabledLabel && onToggle?.( slug, ! isOpen );
 	};
 
+	// translators: %s is the cost per year (e.g "billed as 96$ annually")
+	const planItemPriceLabelAnnually = __( 'billed as %s annually', __i18n_text_domain__ );
+	const planItemPriceLabelMonthly = __( 'billed monthly', __i18n_text_domain__ );
+
 	return (
 		<div
 			className={ classNames( 'plans-accordion-item', {
@@ -123,12 +127,8 @@ const PlanAccordionItem: React.FunctionComponent< Props > = ( {
 
 								{ ! isFree &&
 									( billingPeriod === 'ANNUALLY'
-										? sprintf(
-												// translators: %s is the cost per year (e.g "billed as 96$ annually")
-												__( 'billed as %s annually', __i18n_text_domain__ ),
-												planProduct?.annualPrice
-										  )
-										: __( 'billed monthly', __i18n_text_domain__ ) ) }
+										? sprintf( planItemPriceLabelAnnually, planProduct?.annualPrice )
+										: planItemPriceLabelMonthly ) }
 							</div>
 							{ ! isFree && (
 								<div

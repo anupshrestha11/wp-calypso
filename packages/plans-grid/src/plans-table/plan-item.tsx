@@ -105,9 +105,11 @@ const PlanItem: React.FunctionComponent< Props > = ( {
 	const isOpen = allPlansExpanded || isDesktop || isPopular || isOpenInternalState;
 
 	const fullWidthCtaLabelSelected = __( 'Current Selection', __i18n_text_domain__ );
-
 	// translators: %s is a WordPress.com plan name (eg: Free, Personal)
 	const fullWidthCtaLabelUnselected = __( 'Select %s', __i18n_text_domain__ );
+	// translators: %s is the cost per year (e.g "billed as 96$ annually")
+	const planItemPriceLabelAnnually = __( 'per month, billed as %s annually', __i18n_text_domain__ );
+	const planItemPriceLabelMonthly = __( 'per month, billed monthly', __i18n_text_domain__ );
 
 	return (
 		<div
@@ -160,12 +162,8 @@ const PlanItem: React.FunctionComponent< Props > = ( {
 							{ isFree && __( 'free forever', __i18n_text_domain__ ) }
 							{ ! isFree &&
 								( billingPeriod === 'ANNUALLY'
-									? sprintf(
-											// translators: %s is the cost per year (e.g "billed as 96$ annually")
-											__( 'per month, billed as %s annually', __i18n_text_domain__ ),
-											planProduct?.annualPrice
-									  )
-									: __( 'per month, billed monthly', __i18n_text_domain__ ) ) }
+									? sprintf( planItemPriceLabelAnnually, planProduct?.annualPrice )
+									: planItemPriceLabelMonthly ) }
 						</div>
 
 						{ /*
@@ -216,7 +214,7 @@ const PlanItem: React.FunctionComponent< Props > = ( {
 											<>
 												{ isSelected ? TickIcon : '' }
 												{ isSelected
-													? sprintf( fullWidthCtaLabelSelected, name )
+													? fullWidthCtaLabelSelected
 													: sprintf( fullWidthCtaLabelUnselected, name ) }
 											</>
 										) }
