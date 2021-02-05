@@ -6,7 +6,7 @@ import { addQueryArgs } from '@wordpress/url';
 /**
  * Internal dependencies
  */
-import { isEnabled } from '../../config';
+import { isEnabled } from '@automattic/calypso-config';
 import { mshotsUrl, MShotsOptions } from './components/mshots-image';
 import type { Design } from './stores/onboard/types';
 const availableDesignsConfig = require( './available-designs-config.json' );
@@ -96,6 +96,12 @@ export function getAvailableDesigns(
 		featured: designs.featured.filter( ( design ) =>
 			useFseDesigns ? design.is_fse : ! design.is_fse
 		),
+	};
+
+	// Filter out designs that have been marked as hidden in the json config
+	designs = {
+		...designs,
+		featured: designs.featured.filter( ( { hide } ) => ! hide ),
 	};
 
 	return designs;

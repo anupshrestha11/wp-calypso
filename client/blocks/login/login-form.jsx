@@ -12,7 +12,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import config from 'calypso/config';
+import config from '@automattic/calypso-config';
 import Divider from './divider';
 import FormInputValidation from 'calypso/components/forms/form-input-validation';
 import FormPasswordInput from 'calypso/components/forms/form-password-input';
@@ -510,7 +510,6 @@ export class LoginForm extends Component {
 								) }
 							</p>
 						) }
-
 						<FormLabel htmlFor="usernameOrEmail">
 							{ this.isPasswordView() ? (
 								<button
@@ -532,6 +531,7 @@ export class LoginForm extends Component {
 							autoCapitalize="off"
 							autoCorrect="off"
 							spellCheck="false"
+							autoComplete="username"
 							className={ classNames( {
 								'is-error': requestError && requestError.field === 'usernameOrEmail',
 							} ) }
@@ -566,7 +566,7 @@ export class LoginForm extends Component {
 
 							<FormPasswordInput
 								autoCapitalize="off"
-								autoComplete="off"
+								autoComplete="current-password"
 								className={ classNames( {
 									'is-error': requestError && requestError.field === 'password',
 								} ) }

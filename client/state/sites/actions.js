@@ -9,7 +9,7 @@ import i18n from 'i18n-calypso';
  * Internal dependencies
  */
 import wpcom from 'calypso/lib/wp';
-import config from 'calypso/config';
+import config from '@automattic/calypso-config';
 import {
 	SITE_DELETE,
 	SITE_DELETE_FAILURE,
@@ -28,6 +28,8 @@ import {
 	SITE_MIGRATION_STATUS_UPDATE,
 } from 'calypso/state/action-types';
 import { SITE_REQUEST_FIELDS, SITE_REQUEST_OPTIONS } from 'calypso/state/sites/constants';
+
+import 'calypso/state/data-layer/wpcom/sites/homepage';
 
 /**
  * Returns an action object to be used in signalling that a site has been
@@ -113,7 +115,7 @@ export function requestSites() {
  * Returns a function which, when invoked, triggers a network request to fetch
  * a site.
  *
- * @param {number} siteFragment Site ID or slug
+ * @param {number|string} siteFragment Site ID or slug
  * @param {boolean} forceWpcom explicitly get info from WPCOM vs Jetpack site
  * @returns {Function}              Action thunk
  */

@@ -11,7 +11,7 @@ import { get, startsWith, flowRight as compose } from 'lodash';
  * Internal dependencies
  */
 import AsyncLoad from 'calypso/components/async-load';
-import config from 'calypso/config';
+import config from '@automattic/calypso-config';
 import MasterbarLoggedOut from 'calypso/layout/masterbar/logged-out';
 import notices from 'calypso/notices';
 import OauthClientMasterbar from 'calypso/layout/masterbar/oauth-client';
@@ -27,6 +27,7 @@ import BodySectionCssClass from './body-section-css-class';
 import GdprBanner from 'calypso/blocks/gdpr-banner';
 import wooDnaConfig from 'calypso/jetpack-connect/woo-dna-config';
 import { withCurrentRoute } from 'calypso/components/route';
+import { isWpMobileApp } from 'calypso/lib/mobile-app';
 
 /**
  * Style dependencies
@@ -91,7 +92,7 @@ const LayoutLoggedOut = ( {
 
 			masterbar = <OauthClientMasterbar oauth2Client={ oauth2Client } />;
 		}
-	} else if ( config.isEnabled( 'jetpack-cloud' ) ) {
+	} else if ( config.isEnabled( 'jetpack-cloud' ) || isWpMobileApp() ) {
 		masterbar = null;
 	} else {
 		masterbar = (

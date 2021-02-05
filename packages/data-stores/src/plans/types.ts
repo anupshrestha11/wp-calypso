@@ -1,20 +1,30 @@
 /**
  * Internal dependencies
  */
-import type { plansProductSlugs, plansOrder, plansPaths } from './constants';
+import type { plansProductSlugs, plansSlugs } from './constants';
 
 export type StorePlanSlug = typeof plansProductSlugs[ number ];
-export type PlanSlug = typeof plansOrder[ number ];
-export type PlanPath = typeof plansPaths[ number ];
+export type PlanSlug = typeof plansSlugs[ number ];
+
+// at the moment possible plan paths are identical with plan slugs
+export type PlanPath = PlanSlug;
+
+export type PlanBillingPeriod = 'MONTHLY' | 'ANNUALLY';
+export type PlanNonlocalizedShortName = 'Free' | 'Personal' | 'Premium' | 'Business' | 'eCommerce';
 
 export type PlanAction = {
 	type: string;
 	slug?: string;
 };
+
+export type PlanSimplifiedFeature = {
+	name: string;
+	requiresAnnuallyBilledPlan: boolean;
+};
 export interface Plan {
 	title: string;
 	description: string;
-	features: string[];
+	features: PlanSimplifiedFeature[];
 	isPopular?: boolean;
 	isFree?: boolean;
 	featuresSlugs?: Record< string, boolean >;
@@ -24,7 +34,7 @@ export interface Plan {
 }
 
 export interface PlanProduct {
-	billingPeriod: 'MONTHLY' | 'ANNUALLY';
+	billingPeriod: PlanBillingPeriod;
 	price: string;
 	rawPrice: number;
 	productId: number;
@@ -110,21 +120,21 @@ export type PlanFeature = {
 	id?: string;
 	description?: string;
 	name: string;
+	requiresAnnuallyBilledPlan: boolean;
 	type?: string;
 	data?: Array< boolean | string >;
 };
+
 export interface APIPlanDetail {
 	support_priority: number;
 	support_name: string;
 	groups: string[];
-	products: [
-		{
-			plan_id: number;
-		}
-	];
+	products: {
+		plan_id: number;
+	}[];
 	name: string;
 	short_name: string;
-	nonlocalized_short_name: PlanSlug;
+	nonlocalized_short_name: PlanNonlocalizedShortName;
 	tagline: string;
 	description: string;
 	features: string[];

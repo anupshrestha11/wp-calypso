@@ -13,9 +13,10 @@ import classnames from 'classnames';
 import AsyncLoad from 'calypso/components/async-load';
 import MasterbarLoggedIn from 'calypso/layout/masterbar/logged-in';
 import JetpackCloudMasterbar from 'calypso/components/jetpack/masterbar';
+import EmptyMasterbar from 'calypso/layout/masterbar/empty';
 import HtmlIsIframeClassname from 'calypso/layout/html-is-iframe-classname';
 import notices from 'calypso/notices';
-import config from 'calypso/config';
+import config from '@automattic/calypso-config';
 import OfflineStatus from 'calypso/layout/offline-status';
 import QueryPreferences from 'calypso/components/data/query-preferences';
 import QuerySites from 'calypso/components/data/query-sites';
@@ -47,6 +48,7 @@ import Experiment from 'calypso/components/experiment';
 import QueryReaderTeams from 'calypso/components/data/query-reader-teams';
 import { getReaderTeams } from 'calypso/state/teams/selectors';
 import { isAutomatticTeamMember } from 'calypso/reader/lib/teams';
+import { isWpMobileApp } from 'calypso/lib/mobile-app';
 
 /**
  * Style dependencies
@@ -72,6 +74,11 @@ class Layout extends Component {
 		colorSchemePreference: PropTypes.string,
 		shouldShowAppBanner: PropTypes.bool,
 	};
+
+	UNSAFE_componentWillMount() {
+		// This is temporary helper function until we have rolled out to 100% of customers.
+		this.isNavUnificationEnabled();
+	}
 
 	componentDidMount() {
 		if ( ! config.isEnabled( 'me/account/color-scheme-picker' ) ) {
@@ -100,6 +107,10 @@ class Layout extends Component {
 	}
 
 	componentDidUpdate( prevProps ) {
+		if ( prevProps.teams !== this.props.teams ) {
+			// This is temporary helper function until we have rolled out to 100% of customers.
+			this.isNavUnificationEnabled();
+		}
 		if ( ! config.isEnabled( 'me/account/color-scheme-picker' ) ) {
 			return;
 		}
@@ -120,6 +131,10 @@ class Layout extends Component {
 			return false;
 		}
 
+		if ( isWpMobileApp() ) {
+			return false;
+		}
+
 		const exemptedSections = [ 'jetpack-connect', 'happychat', 'devdocs', 'help' ];
 		const exemptedRoutes = [ '/log-in/jetpack', '/me/account/closed' ];
 		const exemptedRoutesStartingWith = [ '/start/p2' ];
@@ -134,6 +149,9 @@ class Layout extends Component {
 	}
 
 	renderMasterbar() {
+		if ( this.props.masterbarIsHidden ) {
+			return <EmptyMasterbar />;
+		}
 		const MasterbarComponent = config.isEnabled( 'jetpack-cloud' )
 			? JetpackCloudMasterbar
 			: MasterbarLoggedIn;
@@ -144,6 +162,28 @@ class Layout extends Component {
 				isCheckout={ this.props.sectionName === 'checkout' }
 			/>
 		);
+	}
+
+	// This is temporary helper function until we have rolled out to 100% of customers.
+	isNavUnificationEnabled() {
+		if ( ! this.props.teams.length ) {
+			return;
+		}
+
+		// Having the feature enabled by default in all environments, will let anyone use ?disable-nav-unification to temporary disable it.
+		// We still have the feature disabled in production as safety mechanism for all customers.
+		if ( new URL( document.location ).searchParams.has( 'disable-nav-unification' ) ) {
+			return;
+		}
+
+		// Leave the feature enabled for all a12s.
+		if ( isAutomatticTeamMember( this.props.teams ) ) {
+			// Force enable even in Production.
+			return config.enable( 'nav-unification' );
+		}
+
+		// Disable the feature for all customers and non a12s accounts.
+		return config.disable( 'nav-unification' );
 	}
 
 	render() {
@@ -164,7 +204,7 @@ class Layout extends Component {
 				config.isEnabled( 'woocommerce/onboarding-oauth' ) &&
 				isWooOAuth2Client( this.props.oauth2Client ) &&
 				this.props.wccomFrom,
-			'is-nav-unification': isAutomatticTeamMember( this.props.teams ),
+			'is-nav-unification': config.isEnabled( 'nav-unification' ),
 		} );
 
 		const optionalBodyProps = () => {
@@ -178,13 +218,6 @@ class Layout extends Component {
 		};
 
 		const { shouldShowAppBanner } = this.props;
-
-		if ( isAutomatticTeamMember( this.props.teams ) ) {
-			config.enable( 'nav-unification' );
-		} else {
-			config.disable( 'nav-unification' );
-		}
-
 		return (
 			<div className={ sectionClass }>
 				<QueryExperiments />
@@ -266,6 +299,9 @@ class Layout extends Component {
 				{ config.isEnabled( 'legal-updates-banner' ) && (
 					<AsyncLoad require="calypso/blocks/legal-updates-banner" placeholder={ null } />
 				) }
+				{ config.isEnabled( 'nav-unification' ) && ! config.isEnabled( 'jetpack-cloud' ) && (
+					<AsyncLoad require="calypso/blocks/nav-unification-modal" placeholder={ null } />
+				) }
 				<QueryReaderTeams />
 			</div>
 		);
@@ -284,8 +320,7 @@ export default compose(
 		const isJetpack = isJetpackSite( state, siteId ) && ! isAtomicSite( state, siteId );
 		const isCheckoutFromGutenboarding =
 			'checkout' === sectionName && '1' === currentQuery?.preLaunch;
-		const noMasterbarForRoute =
-			isJetpackLogin || isCheckoutFromGutenboarding || currentRoute === '/me/account/closed';
+		const noMasterbarForRoute = isJetpackLogin || currentRoute === '/me/account/closed';
 		const noMasterbarForSection = [ 'signup', 'jetpack-connect' ].includes( sectionName );
 		const isJetpackMobileFlow = 'jetpack-connect' === sectionName && !! retrieveMobileRedirect();
 		const isJetpackWooCommerceFlow =
@@ -308,7 +343,10 @@ export default compose(
 
 		return {
 			masterbarIsHidden:
-				! masterbarIsVisible( state ) || noMasterbarForSection || noMasterbarForRoute,
+				! masterbarIsVisible( state ) ||
+				noMasterbarForSection ||
+				noMasterbarForRoute ||
+				isWpMobileApp(),
 			isJetpack,
 			isJetpackLogin,
 			isJetpackWooCommerceFlow,

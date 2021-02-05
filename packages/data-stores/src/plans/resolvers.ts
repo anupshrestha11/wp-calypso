@@ -2,6 +2,7 @@
  * External dependencies
  */
 import { stringify } from 'qs';
+import formatCurrency from '@automattic/format-currency';
 
 /**
  * Internal dependencies
@@ -9,21 +10,25 @@ import { stringify } from 'qs';
 import { setFeatures, setFeaturesByType, setPlanProducts, setPlans } from './actions';
 import type {
 	PricedAPIPlan,
+	APIPlanDetail,
+	PlanSimplifiedFeature,
 	Plan,
 	DetailsAPIResponse,
 	PlanFeature,
 	PlanProduct,
 	Feature,
+	PlanSlug,
 } from './types';
 import {
+	PLAN_FREE,
 	TIMELESS_PLAN_FREE,
 	TIMELESS_PLAN_PREMIUM,
 	plansProductSlugs,
 	monthlySlugs,
 	annualSlugs,
+	FEATURE_IDS_THAT_REQUIRE_ANNUALLY_BILLED_PLAN,
 } from './constants';
 import { fetchAndParse, wpcomRequest } from '../wpcom-request-controls';
-import formatCurrency from '@automattic/format-currency';
 
 const MONTHLY_PLAN_BILLING_PERIOD = 31;
 
@@ -81,9 +86,45 @@ function processFeatures( features: Feature[] ) {
 			name: feature.name,
 			description: feature.description,
 			type: feature.type ?? 'checkbox',
+			requiresAnnuallyBilledPlan:
+				FEATURE_IDS_THAT_REQUIRE_ANNUALLY_BILLED_PLAN.indexOf( feature.id ) > -1,
 		};
 		return features;
 	}, {} as Record< string, PlanFeature > );
+}
+
+function featureRequiresAnnual(
+	featureName: string,
+	allFeaturesData: Record< string, PlanFeature >
+): boolean {
+	const matchedFeatureId = Object.keys( allFeaturesData ).find(
+		( featureId ) => allFeaturesData[ featureId ].name === featureName
+	);
+
+	if ( matchedFeatureId ) {
+		return allFeaturesData[ matchedFeatureId ].requiresAnnuallyBilledPlan;
+	}
+
+	return false;
+}
+
+function processPlanFeatures(
+	planData: APIPlanDetail,
+	allFeaturesData: Record< string, PlanFeature >
+): PlanSimplifiedFeature[] {
+	const features: PlanSimplifiedFeature[] = planData.highlighted_features.map(
+		( featureName ) => ( {
+			name: featureName,
+			requiresAnnuallyBilledPlan: featureRequiresAnnual( featureName, allFeaturesData ),
+		} )
+	);
+
+	// Features requiring an annually billed plan should be first in the array.
+	features.sort(
+		( a, b ) => Number( b.requiresAnnuallyBilledPlan ) - Number( a.requiresAnnuallyBilledPlan )
+	);
+
+	return features;
 }
 
 function normalizePlanProducts(
@@ -110,7 +151,7 @@ function normalizePlanProducts(
 			periodAgnosticSlug: periodAgnosticPlan.periodAgnosticSlug,
 			storeSlug: planProduct.product_slug,
 			rawPrice: planProduct.raw_price,
-			pathSlug: planProduct.path_slug,
+			pathSlug: planProduct.product_slug === PLAN_FREE ? 'free' : planProduct.path_slug,
 			price:
 				planProduct?.bill_period === MONTHLY_PLAN_BILLING_PERIOD || planProduct.raw_price === 0
 					? getFormattedPrice( planProduct )
@@ -143,25 +184,28 @@ export function* getSupportedPlans( locale = 'en' ) {
 		}
 	) ) as { body: DetailsAPIResponse };
 
+	const features = processFeatures( plansFeatures.features );
+
 	const periodAgnosticPlans: Plan[] = plansFeatures.plans.map( ( plan ) => {
+		const planSlug = plan.nonlocalized_short_name?.toLowerCase() as PlanSlug;
+
 		return {
 			description: plan.tagline,
-			features: plan.highlighted_features,
+			features: processPlanFeatures( plan, features ),
 			storage: plan.storage,
 			title: plan.short_name,
 			featuresSlugs: plan.features.reduce( ( slugs, slug ) => {
 				slugs[ slug ] = true;
 				return slugs;
 			}, {} as Record< string, boolean > ),
-			isFree: plan.nonlocalized_short_name === TIMELESS_PLAN_FREE,
-			isPopular: plan.nonlocalized_short_name === TIMELESS_PLAN_PREMIUM,
-			periodAgnosticSlug: plan.nonlocalized_short_name,
+			isFree: planSlug === TIMELESS_PLAN_FREE,
+			isPopular: planSlug === TIMELESS_PLAN_PREMIUM,
+			periodAgnosticSlug: planSlug,
 			productIds: plan.products.map( ( { plan_id } ) => plan_id ),
 		};
 	} );
 
 	const planProducts = normalizePlanProducts( pricedPlans, periodAgnosticPlans );
-	const features = processFeatures( plansFeatures.features );
 
 	yield setPlans( periodAgnosticPlans );
 	yield setPlanProducts( planProducts );

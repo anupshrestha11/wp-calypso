@@ -68,8 +68,8 @@ export default {
 		defaultVariation: 'control',
 		allowExistingUsers: false,
 	},
-	jetpackSimplifyPricingPage: {
-		datestamp: '20210125',
+	prefillFRESHPACKCouponCode: {
+		datestamp: '20210203',
 		variations: {
 			test: 50,
 			control: 50,

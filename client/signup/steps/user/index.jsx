@@ -34,7 +34,7 @@ import { recordTracksEvent } from 'calypso/state/analytics/actions';
 import { saveSignupStep, submitSignupStep } from 'calypso/state/signup/progress/actions';
 import { WPCC } from 'calypso/lib/url/support';
 import { initGoogleRecaptcha, recordGoogleRecaptchaAction } from 'calypso/lib/analytics/recaptcha';
-import config from 'calypso/config';
+import config from '@automattic/calypso-config';
 import AsyncLoad from 'calypso/components/async-load';
 import WooCommerceConnectCartHeader from 'calypso/extensions/woocommerce/components/woocommerce-connect-cart-header';
 import { getSocialServiceFromClientId } from 'calypso/lib/login';
@@ -205,6 +205,12 @@ export class UserStep extends Component {
 	};
 
 	isOauth2RedirectValid( oauth2Redirect ) {
+		// Allow Google sign-up to work.
+		// See: https://github.com/Automattic/wp-calypso/issues/49572
+		if ( oauth2Redirect === undefined ) {
+			return true;
+		}
+
 		try {
 			const url = new URL( oauth2Redirect );
 			return url.host === 'public-api.wordpress.com';

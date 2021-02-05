@@ -36,7 +36,12 @@ import { planLevelsMatch } from 'calypso/lib/plans/index';
 
 export class PlanFeaturesHeader extends Component {
 	render() {
-		const { isInSignup, plansWithScroll, planType } = this.props;
+		const {
+			isInSignup,
+			plansWithScroll,
+			planType,
+			isInVerticalScrollingPlansExperiment,
+		} = this.props;
 
 		if ( planType === PLAN_P2_FREE ) {
 			return this.renderPlansHeaderP2Free();
@@ -46,10 +51,20 @@ export class PlanFeaturesHeader extends Component {
 		if ( plansWithScroll ) {
 			return this.renderPlansHeaderNoTabs();
 		} else if ( isInSignup ) {
+			if ( isInVerticalScrollingPlansExperiment ) {
+				return this.renderPlansHeaderNoTabs();
+			}
 			return this.renderSignupHeader();
 		}
-
 		return this.renderPlansHeader();
+	}
+
+	resolveIsPillInCorner() {
+		const { isInSignup, isInVerticalScrollingPlansExperiment, plansWithScroll } = this.props;
+		return (
+			( isInVerticalScrollingPlansExperiment && isInSignup && plansWithScroll ) ||
+			( ! isInVerticalScrollingPlansExperiment && isInSignup )
+		);
 	}
 
 	renderPlansHeader() {
@@ -108,12 +123,12 @@ export class PlanFeaturesHeader extends Component {
 			popular,
 			selectedPlan,
 			title,
-			isInSignup,
 			audience,
 			translate,
 		} = this.props;
 
 		const headerClasses = classNames( 'plan-features__header', getPlanClass( planType ) );
+		const isPillInCorner = this.resolveIsPillInCorner();
 
 		return (
 			<span>
@@ -121,16 +136,16 @@ export class PlanFeaturesHeader extends Component {
 					<h4 className="plan-features__header-title">{ title }</h4>
 					<div className="plan-features__audience">{ audience }</div>
 					{ planLevelsMatch( selectedPlan, planType ) && (
-						<PlanPill isInSignup={ isInSignup }>{ translate( 'Suggested' ) }</PlanPill>
+						<PlanPill isInSignup={ isPillInCorner }>{ translate( 'Suggested' ) }</PlanPill>
 					) }
 					{ popular && ! selectedPlan && (
-						<PlanPill isInSignup={ isInSignup }>{ translate( 'Popular' ) }</PlanPill>
+						<PlanPill isInSignup={ isPillInCorner }>{ translate( 'Popular' ) }</PlanPill>
 					) }
 					{ newPlan && ! selectedPlan && (
-						<PlanPill isInSignup={ isInSignup }>{ translate( 'New' ) }</PlanPill>
+						<PlanPill isInSignup={ isPillInCorner }>{ translate( 'New' ) }</PlanPill>
 					) }
 					{ bestValue && ! selectedPlan && (
-						<PlanPill isInSignup={ isInSignup }>{ translate( 'Best Value' ) }</PlanPill>
+						<PlanPill isInSignup={ isPillInCorner }>{ translate( 'Best Value' ) }</PlanPill>
 					) }
 				</header>
 				<div className="plan-features__pricing">
@@ -349,8 +364,14 @@ export class PlanFeaturesHeader extends Component {
 	}
 
 	renderPriceGroup( fullPrice, discountedPrice = null ) {
-		const { currencyCode, isInSignup, plansWithScroll } = this.props;
-		const displayFlatPrice = isInSignup && ! plansWithScroll;
+		const {
+			currencyCode,
+			isInSignup,
+			plansWithScroll,
+			isInVerticalScrollingPlansExperiment,
+		} = this.props;
+		const displayFlatPrice =
+			isInSignup && ! plansWithScroll && ! isInVerticalScrollingPlansExperiment;
 
 		if ( fullPrice && discountedPrice ) {
 			return (

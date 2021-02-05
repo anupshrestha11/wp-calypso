@@ -12,7 +12,7 @@ import { shallow } from 'enzyme';
  * Internal dependencies
  */
 import { MySitesSidebar } from '..';
-import config from 'calypso/config';
+import config from '@automattic/calypso-config';
 import { abtest } from 'calypso/lib/abtest';
 
 jest.mock( 'calypso/lib/user', () => () => null );
@@ -30,7 +30,7 @@ jest.mock( 'calypso/my-sites/sidebar/utils', () => ( {
 	itemLinkMatches: jest.fn( () => true ),
 } ) );
 
-jest.mock( 'calypso/config', () => {
+jest.mock( '@automattic/calypso-config', () => {
 	const configMock = () => '';
 	configMock.isEnabled = jest.fn( () => true );
 	return configMock;
@@ -72,6 +72,7 @@ describe( 'MySitesSidebar', () => {
 		test( 'Should return store menu item if user can use store on this site', () => {
 			const Sidebar = new MySitesSidebar( {
 				canUserUseCalypsoStore: true,
+				isSiteWpcomStore: true,
 				...defaultProps,
 				site: {
 					plan: {
@@ -89,6 +90,7 @@ describe( 'MySitesSidebar', () => {
 			const Sidebar = new MySitesSidebar( {
 				canUserUseCalypsoStore: true,
 				canUserUseWooCommerceCoreStore: true,
+				isSiteWpcomStore: true,
 				...defaultProps,
 				site: {
 					options: {
@@ -103,6 +105,27 @@ describe( 'MySitesSidebar', () => {
 
 			const wrapper = shallow( <Store /> );
 			expect( wrapper.props().link ).toEqual( 'http://test.com/wp-admin/admin.php?page=wc-admin' );
+		} );
+
+		test( 'Should not return store menu item if a business site does not have the store installed', () => {
+			const Sidebar = new MySitesSidebar( {
+				canUserUseCalypsoStore: true,
+				canUserUseWooCommerceCoreStore: true,
+				isSiteWpcomStore: false,
+				...defaultProps,
+				site: {
+					options: {
+						admin_url: 'http://test.com/wp-admin/',
+					},
+					plan: {
+						product_slug: 'business-bundle',
+					},
+				},
+			} );
+			const Store = () => Sidebar.store();
+
+			const wrapper = shallow( <Store /> );
+			expect( wrapper ).toEqual( {} );
 		} );
 
 		test( 'Should return null item if user who can upgrade can not use store on this site (control a/b group)', () => {

@@ -20,6 +20,7 @@ import { sprintf } from '@wordpress/i18n';
  * Internal dependencies
  */
 import InfoTooltip from '../info-tooltip';
+import WrappingComponent from './suggestion-item-wrapper';
 // TODO: remove when all needed core types are available
 /*#__PURE__*/ import '../types-patch';
 
@@ -30,37 +31,11 @@ export type SUGGESTION_ITEM_TYPE =
 	| typeof ITEM_TYPE_RADIO
 	| typeof ITEM_TYPE_BUTTON
 	| typeof ITEM_TYPE_INDIVIDUAL_ITEM;
-
-// to avoid nesting buttons, wrap the item with a div instead of button in button mode
-// (button mode means there is a Select button, not the whole item being a button)
-
-interface WrappingComponentAdditionalProps {
-	type: SUGGESTION_ITEM_TYPE;
-	disabled?: boolean;
-}
-type WrappingComponentProps = WrappingComponentAdditionalProps &
-	( React.HTMLAttributes< HTMLDivElement > | React.ButtonHTMLAttributes< HTMLButtonElement > );
-
-const WrappingComponent = React.forwardRef< HTMLButtonElement, WrappingComponentProps >(
-	( { type, disabled, ...props }, ref ) => {
-		if ( type === 'button' ) {
-			return <div { ...( props as React.HTMLAttributes< HTMLDivElement > ) } />;
-		}
-		return (
-			<button
-				ref={ ref }
-				disabled={ disabled }
-				{ ...( props as React.ButtonHTMLAttributes< HTMLButtonElement > ) }
-			/>
-		);
-	}
-);
-
 interface Props {
 	isUnavailable?: boolean;
 	domain: string;
 	isLoading?: boolean;
-	cost: string;
+	cost?: string;
 	hstsRequired?: boolean;
 	isFree?: boolean;
 	isExistingSubdomain?: boolean;
@@ -106,7 +81,7 @@ const DomainPickerSuggestionItem: React.FC< Props > = ( {
 			? __( 'Default', __i18n_text_domain__ )
 			: __( 'Free', __i18n_text_domain__ );
 
-	const firstYearIncludedInPaid = isMobile
+	const firstYearIncludedInPaidLabel = isMobile
 		? __( 'Included in paid plans', __i18n_text_domain__ )
 		: createInterpolateElement(
 				__( '<strong>First year included</strong> in paid plans', __i18n_text_domain__ ),
@@ -115,10 +90,21 @@ const DomainPickerSuggestionItem: React.FC< Props > = ( {
 				}
 		  );
 
-	const paidIncludedDomainLabel =
-		type === ITEM_TYPE_INDIVIDUAL_ITEM
-			? firstYearIncludedInPaid
-			: __( isMobile ? 'Free' : 'Included with annual plans', __i18n_text_domain__ );
+	/**
+	 *  IIFE executes immediately after creation, hence it returns the translated values immediately.
+	 * The great advantage is that:
+	 * 1. We don't have to execute it during rendering.
+	 * 2. We don't have to use nested ternaries (which is not allowed by the linter).
+	 * 3. It improves the readibility of our code
+	 */
+	const paidIncludedDomainLabel = ( () => {
+		if ( type === ITEM_TYPE_INDIVIDUAL_ITEM ) {
+			return firstYearIncludedInPaidLabel;
+		} else if ( isMobile ) {
+			return __( 'Free', __i18n_text_domain__ );
+		}
+		return __( 'Included with annual plans', __i18n_text_domain__ );
+	} )();
 
 	React.useEffect( () => {
 		// Only record TrainTracks render event when the domain name and railcarId change.

@@ -12,7 +12,7 @@ import { ProgressBar } from '@automattic/components';
 /**
  * Internal dependencies
  */
-import { isEnabled } from 'calypso/config';
+import { isEnabled } from '@automattic/calypso-config';
 import CurrentSite from 'calypso/my-sites/current-site';
 import ExpandableSidebarMenu from 'calypso/layout/sidebar/expandable';
 import ExternalLink from 'calypso/components/external-link';
@@ -665,9 +665,27 @@ export class MySitesSidebar extends Component {
 		);
 	}
 
-	trackStoreClick = () => {
-		this.trackMenuItemClick( 'store' );
-		this.props.recordTracksEvent( 'calypso_woocommerce_store_nav_item_click' );
+	trackWooCommerceNavItemClick = ( menuItemName, experience, plan ) => {
+		// Log the general Tracks event
+		this.trackMenuItemClick( menuItemName );
+
+		// Log a single Tracks event for Store/WooCommerce nav item clicks,
+		// so that easy comparisons can be made between them.
+		this.props.recordTracksEvent( 'calypso_woocommerce_nav_item_click', {
+			nav_item: menuItemName,
+			experience,
+			plan,
+			nav_item_experience_plan_combo: `${ menuItemName }__${ experience }__${ plan }`,
+		} );
+
+		// Continue to log the old individual Tracks events so that existing analysis
+		// using them still function.
+		if ( menuItemName === 'store' ) {
+			this.props.recordTracksEvent( 'calypso_woocommerce_store_nav_item_click' );
+		} else if ( menuItemName === 'woocommerce' ) {
+			this.props.recordTracksEvent( 'calypso_woocommerce_store_woo_core_item_click' );
+		}
+
 		this.onNavigate();
 	};
 
@@ -678,20 +696,29 @@ export class MySitesSidebar extends Component {
 			siteSuffix,
 			canUserUseCalypsoStore,
 			canUserUseWooCommerceCoreStore,
+			isSiteWpcomStore,
 		} = this.props;
 
 		if ( ! site ) {
 			return null;
 		}
 
+		let experience = 'calypso-store';
 		let storeLink = '/store' + siteSuffix;
 		if ( isEcommerce( site.plan ) && canUserUseWooCommerceCoreStore ) {
 			// Eventually, the plan is to have the WooCommerce Core menu item labelled the same
 			// for both Business and eCommerce users. But, for now, we want to continue to
 			// use the "Store" label for eCommerce users because that is what they are used to.
 			// So, we'll just continue to change the link here as we have been doing.
+			experience = 'wpadmin-woocommerce-core';
 			storeLink = site.options.admin_url + 'admin.php?page=wc-admin';
 		} else if ( ! canUserUseCalypsoStore ) {
+			return null;
+		}
+
+		const isCalypsoStoreDeprecated = isEnabled( 'woocommerce/store-deprecated' );
+
+		if ( ! isSiteWpcomStore && isCalypsoStoreDeprecated && isBusiness( site.plan ) ) {
 			return null;
 		}
 
@@ -709,35 +736,31 @@ export class MySitesSidebar extends Component {
 				},
 			}
 		);
-		const isCalypsoStoreDeprecated = isEnabled( 'woocommerce/store-deprecated' );
 
 		return (
 			<SidebarItem
 				label={ translate( 'Store' ) }
 				link={ storeLink }
-				onNavigate={ this.trackStoreClick }
+				onNavigate={ this.trackWooCommerceNavItemClick.bind(
+					this,
+					'store',
+					experience,
+					site.plan.product_slug
+				) }
 				materialIcon="shopping_cart"
 				forceInternalLink
 				className="sidebar__store"
 			>
-				{ isCalypsoStoreDeprecated && isBusiness( site.plan ) && (
-					<InfoPopover
-						className="sidebar__store-tooltip"
-						position="bottom right"
-						showOnHover={ true }
-					>
-						{ infoCopy }
-					</InfoPopover>
-				) }
+				<InfoPopover
+					className="sidebar__store-tooltip"
+					position="bottom right"
+					showOnHover={ true }
+				>
+					{ infoCopy }
+				</InfoPopover>
 			</SidebarItem>
 		);
 	}
-
-	trackWooCommerceClick = () => {
-		this.trackMenuItemClick( 'woocommerce' );
-		this.props.recordTracksEvent( 'calypso_woocommerce_store_woo_core_item_click' );
-		this.onNavigate();
-	};
 
 	woocommerce() {
 		const { site, canUserUseWooCommerceCoreStore, siteSuffix, isSiteWpcomStore } = this.props;
@@ -770,7 +793,12 @@ export class MySitesSidebar extends Component {
 			<SidebarItem
 				label="WooCommerce"
 				link={ storeLink }
-				onNavigate={ this.trackWooCommerceClick }
+				onNavigate={ this.trackWooCommerceNavItemClick.bind(
+					this,
+					'woocommerce',
+					'wpadmin-woocommerce-core',
+					site.plan.product_slug
+				) }
 				materialIcon="shopping_cart"
 			/>
 		);

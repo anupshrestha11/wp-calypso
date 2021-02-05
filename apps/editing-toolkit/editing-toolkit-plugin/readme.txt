@@ -3,7 +3,7 @@ Contributors: automattic
 Tags: block, blocks, editor, gutenberg, page
 Requires at least: 5.5
 Tested up to: 5.6
-Stable tag: 2.13
+Stable tag: 2.17
 Requires PHP: 5.6.20
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -39,6 +39,31 @@ This plugin is experimental, so we don't provide any support for it outside of w
 
 
 == Changelog ==
+
+= 2.17 =
+* WelcomeTour: capture mousedown event and call preventDefault on the event (https://github.com/Automattic/wp-calypso/pull/49583)
+* Premium Content: Remove from the Editing Toolkit plugin (https://github.com/Automattic/wp-calypso/pull/49561)
+* Anchor: Gutenboarding Launch works immediately without domain or plan selection (https://github.com/Automattic/wp-calypso/pull/48938)
+* Editing Toolkit: Update Newspack blocks to v1.19.0 (https://github.com/Automattic/wp-calypso/pull/49493)
+* Plans store: Always pass locale to plans store (https://github.com/Automattic/wp-calypso/pull/49559)
+* Welcome Tour: Prevent clicks on Tour from bubbling up to the Block Inserter (https://github.com/Automattic/wp-calypso/pull/49583)
+
+= 2.16 =
+* Fix Global Styles Panel Font Change Update (https://github.com/Automattic/wp-calypso/pull/49216)
+* Welcome Tour: combine existing and variant tour plugins (https://github.com/Automattic/wp-calypso/pull/49296)
+* Launch: Fix launch button translations not loaded. (https://github.com/Automattic/wp-calypso/pull/49456)
+* Gutenboarding: Fix eCommerce plan not being recommended (https://github.com/Automattic/wp-calypso/pull/49426)
+* Gutenboarding: Fix "Choose a domain I own" layout on mobile (https://github.com/Automattic/wp-calypso/pull/49249)
+* Domain Picker: Prevent instant error on domain step during editor launch flow (https://github.com/Automattic/wp-calypso/pull/48399)
+* Focused Launch: Highlight selected plan in Focused Launch - Detailed Plans. (https://github.com/Automattic/wp-calypso/pull/48622)
+
+= 2.15 =
+* Add plugin to transform i18n imports to local variables (https://github.com/Automattic/wp-calypso/pull/49341)
+* Plans Grid: add monthly pricing option (https://github.com/Automattic/wp-calypso/pull/48963)
+* Gutenboarding: Calypso-Free Launch Button Injection (https://github.com/Automattic/wp-calypso/pull/49004)
+
+= 2.14 =
+* Hide plugin buttons in header on mobile layouts (https://github.com/Automattic/wp-calypso/pull/49329)
 
 = 2.13 =
 * New Onboarding Launch: fix plans data-store integration (https://github.com/Automattic/wp-calypso/pull/49304)

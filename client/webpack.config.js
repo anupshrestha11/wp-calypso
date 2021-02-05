@@ -39,7 +39,6 @@ const { workerCount } = require( './webpack.common' );
 const getAliasesForExtensions = require( '../build-tools/webpack/extensions' );
 const RequireChunkCallbackPlugin = require( '../build-tools/webpack/require-chunk-callback-plugin' );
 const GenerateChunksMapPlugin = require( '../build-tools/webpack/generate-chunks-map-plugin' );
-const ExtractManifestPlugin = require( '../build-tools/webpack/extract-manifest-plugin' );
 const AssetsWriter = require( '../build-tools/webpack/assets-writer-plugin.js' );
 
 /**
@@ -61,6 +60,7 @@ const shouldBuildChunksMap =
 	process.env.BUILD_TRANSLATION_CHUNKS === 'true' ||
 	process.env.ENABLE_FEATURES === 'use-translation-chunks';
 const isDesktop = calypsoEnv === 'desktop' || calypsoEnv === 'desktop-development';
+const shouldUsePersistentCache = process.env.PERSISTENT_CACHE === 'true';
 
 const defaultBrowserslistEnv = 'evergreen';
 const browserslistEnv = process.env.BROWSERSLIST_ENV || defaultBrowserslistEnv;
@@ -126,8 +126,8 @@ if ( ! process.env.BROWSERSLIST_ENV ) {
 	process.env.BROWSERSLIST_ENV = browserslistEnv;
 }
 
-let outputFilename = '[name].[chunkhash].min.js'; // prefer the chunkhash, which depends on the chunk, not the entire build
-let outputChunkFilename = '[name].[chunkhash].min.js'; // ditto
+let outputFilename = '[name].[contenthash].min.js';
+let outputChunkFilename = '[name].[contenthash].min.js';
 
 // we should not use chunkhash in development: https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
 // also we don't minify so dont name them .min.js
@@ -391,10 +391,38 @@ const webpackConfig = {
 		 * Replace `lodash` with `lodash-es`
 		 */
 		new ExtensiveLodashReplacementPlugin(),
-
-		! isDesktop && ! isDevelopment && new ExtractManifestPlugin(),
 	].filter( Boolean ),
 	externals: [ 'keytar' ],
+	...( shouldUsePersistentCache
+		? {
+				cache: {
+					// More info in https://github.com/webpack/changelog-v5/blob/f518964326583c74e9b78296faebdb9c32b01ea8/guides/persistent-caching.md
+					type: 'filesystem',
+					version: [
+						shouldBuildChunksMap,
+						shouldMinify,
+						process.env.ENTRY_LIMIT,
+						process.env.SECTION_LIMIT,
+						process.env.SOURCEMAP,
+						process.env.NODE_ENV,
+						process.env.CALYPSO_ENV,
+					].join( '-' ),
+					cacheDirectory: path.resolve( cachePath, 'webpack' ),
+					buildDependencies: {
+						config: [ __filename ],
+					},
+				},
+				snapshot: {
+					managedPaths: [
+						path.resolve( __dirname, '../node_modules' ),
+						path.resolve( __dirname, 'node_modules' ),
+					],
+				},
+				infrastructureLogging: {
+					debug: /webpack\.cache/,
+				},
+		  }
+		: {} ),
 };
 
 module.exports = webpackConfig;

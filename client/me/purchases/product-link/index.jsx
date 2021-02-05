@@ -10,13 +10,13 @@ import i18n from 'i18n-calypso';
 /**
  * Internal Dependencies
  */
-import config from 'calypso/config';
+import config from '@automattic/calypso-config';
 import { domainManagementEdit } from 'calypso/my-sites/domains/paths';
 import { emailManagement } from 'calypso/my-sites/email/paths';
 import { getThemeDetailsUrl } from 'calypso/state/themes/selectors';
 import {
 	isDomainProduct,
-	isGoogleApps,
+	isGSuiteOrGoogleWorkspace,
 	isPlan,
 	isSiteRedirect,
 	isTheme,
@@ -42,7 +42,7 @@ const ProductLink = ( { productUrl, purchase, selectedSite } ) => {
 		text = i18n.translate( 'Domain Settings' );
 	}
 
-	if ( isGoogleApps( purchase ) || isTitanMail( purchase ) ) {
+	if ( isGSuiteOrGoogleWorkspace( purchase ) || isTitanMail( purchase ) ) {
 		url = emailManagement( selectedSite.slug, purchase.meta );
 		text = i18n.translate( 'Email Settings' );
 	}

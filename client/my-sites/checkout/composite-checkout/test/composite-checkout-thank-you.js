@@ -8,8 +8,13 @@
  * Internal dependencies
  */
 import getThankYouPageUrl from '../hooks/use-get-thank-you-url/get-thank-you-page-url';
-import { isEnabled } from 'calypso/config';
-import { PLAN_ECOMMERCE } from '../../../../lib/plans/constants';
+import { isEnabled } from '@automattic/calypso-config';
+import {
+	PLAN_ECOMMERCE,
+	JETPACK_REDIRECT_URL,
+	redirectCloudCheckoutToWpAdmin,
+} from 'calypso/lib/plans/constants';
+import isJetpackCloud from 'calypso/lib/jetpack/is-jetpack-cloud';
 
 let mockGSuiteCountryIsValid = true;
 jest.mock( 'calypso/lib/user', () =>
@@ -18,7 +23,13 @@ jest.mock( 'calypso/lib/user', () =>
 	} ) )
 );
 
-jest.mock( 'calypso/config', () => {
+jest.mock( 'calypso/lib/jetpack/is-jetpack-cloud', () => jest.fn() );
+jest.mock( 'calypso/lib/plans/constants', () => ( {
+	...jest.requireActual( 'calypso/lib/plans/constants' ),
+	redirectCloudCheckoutToWpAdmin: jest.fn(),
+} ) );
+
+jest.mock( '@automattic/calypso-config', () => {
 	const mock = () => 'development';
 	mock.isEnabled = jest.fn();
 	return mock;
@@ -39,6 +50,11 @@ const defaultArgs = {
 };
 
 describe( 'getThankYouPageUrl', () => {
+	beforeEach( () => {
+		isJetpackCloud.mockImplementation( () => false );
+		redirectCloudCheckoutToWpAdmin.mockImplementation( () => false );
+	} );
+
 	it( 'redirects to the root page when no site is set', () => {
 		const url = getThankYouPageUrl( defaultArgs );
 		expect( url ).toBe( '/' );
@@ -201,6 +217,98 @@ describe( 'getThankYouPageUrl', () => {
 		expect( url ).toBe( '/checkout/thank-you/foo.bar/1234abcd' );
 	} );
 
+	it( 'redirects to the Jetpack Redirect API if checkout is on Jetpack Cloud and there is a non-atomic jetpack product', () => {
+		isJetpackCloud.mockImplementation( () => true );
+		const url = getThankYouPageUrl( {
+			...defaultArgs,
+			siteSlug: 'foo.bar',
+			purchaseId: '1234abcd',
+			isJetpackNotAtomic: true,
+			productAliasFromUrl: 'jetpack_backup_daily',
+		} );
+		expect( url ).toBe(
+			`${ JETPACK_REDIRECT_URL }&site=foo.bar&query=product%3Djetpack_backup_daily%26thank-you%3Dtrue`
+		);
+	} );
+
+	it( 'redirects to the Jetpack Redirect API if checkout is on Jetpack Cloud and there is a non-atomic jetpack product in the cart', () => {
+		isJetpackCloud.mockImplementation( () => true );
+		const url = getThankYouPageUrl( {
+			...defaultArgs,
+			siteSlug: 'foo.bar',
+			purchaseId: '1234abcd',
+			isJetpackNotAtomic: true,
+			cart: {
+				products: [ { product_slug: 'jetpack_backup_realtime' } ],
+			},
+		} );
+		expect( url ).toBe(
+			`${ JETPACK_REDIRECT_URL }&site=foo.bar&query=product%3Djetpack_backup_realtime%26thank-you%3Dtrue`
+		);
+	} );
+
+	it( 'redirects to the Jetpack Redirect API if checkout is on Jetpack Cloud and there is a non-atomic Jetpack Security plan', () => {
+		isJetpackCloud.mockImplementation( () => true );
+		const url = getThankYouPageUrl( {
+			...defaultArgs,
+			siteSlug: 'foo.bar',
+			purchaseId: '1234abcd',
+			isJetpackNotAtomic: true,
+			productAliasFromUrl: 'jetpack_security_daily_monthly',
+		} );
+		expect( url ).toBe(
+			`${ JETPACK_REDIRECT_URL }&site=foo.bar&query=product%3Djetpack_security_daily_monthly%26thank-you%3Dtrue`
+		);
+	} );
+
+	it( 'redirects to the Jetpack Redirect API if checkout is on Jetpack Cloud and there is a non-atomic Jetpack Security plan is in the cart', () => {
+		isJetpackCloud.mockImplementation( () => true );
+		const url = getThankYouPageUrl( {
+			...defaultArgs,
+			siteSlug: 'foo.bar',
+			purchaseId: '1234abcd',
+			isJetpackNotAtomic: true,
+			cart: {
+				products: [ { product_slug: 'jetpack_security_daily' } ],
+			},
+		} );
+		expect( url ).toBe(
+			`${ JETPACK_REDIRECT_URL }&site=foo.bar&query=product%3Djetpack_security_daily%26thank-you%3Dtrue`
+		);
+	} );
+
+	it( 'redirects to the Jetpack Redirect API if checkout is on Jetpack Cloud and there is a non-atomic Jetpack Complete plan is in the cart', () => {
+		isJetpackCloud.mockImplementation( () => true );
+		const url = getThankYouPageUrl( {
+			...defaultArgs,
+			siteSlug: 'foo.bar',
+			purchaseId: '1234abcd',
+			isJetpackNotAtomic: true,
+			cart: {
+				products: [ { product_slug: 'jetpack_complete' } ],
+			},
+		} );
+		expect( url ).toBe(
+			`${ JETPACK_REDIRECT_URL }&site=foo.bar&query=product%3Djetpack_complete%26thank-you%3Dtrue`
+		);
+	} );
+
+	it( 'redirects to the sites wp-admin if checkout is on Jetpack Cloud and if redirectCloudCheckoutToWpAdmin() flag is true and there is a non-atomic jetpack product', () => {
+		isJetpackCloud.mockImplementation( () => true );
+		redirectCloudCheckoutToWpAdmin.mockImplementation( () => true );
+		const adminUrl = 'https://my.site/wp-admin/';
+		const url = getThankYouPageUrl( {
+			...defaultArgs,
+			siteSlug: 'foo.bar',
+			isJetpackNotAtomic: true,
+			cart: {
+				products: [ { product_slug: 'jetpack_complete' } ],
+			},
+			adminUrl,
+		} );
+		expect( url ).toBe( `https://my.site/wp-admin/admin.php?page=jetpack#/my-plan` );
+	} );
+
 	it( 'redirects to the plans page with thank-you query string if there is a non-atomic jetpack product', () => {
 		const url = getThankYouPageUrl( {
 			...defaultArgs,
@@ -331,7 +439,7 @@ describe( 'getThankYouPageUrl', () => {
 		expect( url ).toBe( '/me/purchases/foo.bar/123abc' );
 	} );
 
-	it( 'does not redirect to url from cookie if isEligibleForSignupDestination is false', () => {
+	it( 'does not redirect to url from cookie if isEligibleForSignupDestinationResult is false', () => {
 		const getUrlFromCookie = jest.fn( () => '/cookie' );
 		const cart = {
 			products: [ { product_slug: 'foo' } ],
@@ -341,9 +449,25 @@ describe( 'getThankYouPageUrl', () => {
 			siteSlug: 'foo.bar',
 			cart,
 			getUrlFromCookie,
-			isEligibleForSignupDestination: false,
+			isEligibleForSignupDestinationResult: false,
 		} );
 		expect( url ).toBe( '/checkout/thank-you/foo.bar/:receiptId' );
+	} );
+
+	it( 'Redirects to root if previous receipt is "noPreviousPurchase" and isEligibleForSignupDestinationResult is false', () => {
+		const getUrlFromCookie = jest.fn( () => '/cookie' );
+		const cart = {
+			products: [ { product_slug: 'foo' } ],
+		};
+		const url = getThankYouPageUrl( {
+			...defaultArgs,
+			siteSlug: 'foo.bar',
+			receiptId: 'noPreviousPurchase',
+			cart,
+			getUrlFromCookie,
+			isEligibleForSignupDestinationResult: false,
+		} );
+		expect( url ).toBe( '/' );
 	} );
 
 	it( 'redirects to url from cookie if isEligibleForSignupDestination is set', () => {
@@ -357,21 +481,6 @@ describe( 'getThankYouPageUrl', () => {
 			cart,
 			getUrlFromCookie,
 			isEligibleForSignupDestinationResult: true,
-		} );
-		expect( url ).toBe( '/cookie' );
-	} );
-
-	it( 'redirects to url from cookie if cart is empty and no receipt is set', () => {
-		const getUrlFromCookie = jest.fn( () => '/cookie' );
-		const cart = {
-			products: [],
-		};
-		const url = getThankYouPageUrl( {
-			...defaultArgs,
-			siteSlug: 'foo.bar',
-			cart,
-			getUrlFromCookie,
-			isEligibleForSignupDestination: true,
 		} );
 		expect( url ).toBe( '/cookie' );
 	} );

@@ -13,15 +13,6 @@ import { getSiteDomain } from 'calypso/state/sites/selectors';
 import { getInviteForSite } from 'calypso/state/invites/selectors';
 import { restorePost } from 'calypso/state/posts/actions';
 import {
-	ACCOUNT_RECOVERY_SETTINGS_FETCH_FAILED,
-	ACCOUNT_RECOVERY_SETTINGS_UPDATE_SUCCESS,
-	ACCOUNT_RECOVERY_SETTINGS_UPDATE_FAILED,
-	ACCOUNT_RECOVERY_SETTINGS_DELETE_SUCCESS,
-	ACCOUNT_RECOVERY_SETTINGS_DELETE_FAILED,
-	ACCOUNT_RECOVERY_SETTINGS_RESEND_VALIDATION_SUCCESS,
-	ACCOUNT_RECOVERY_SETTINGS_RESEND_VALIDATION_FAILED,
-	ACCOUNT_RECOVERY_SETTINGS_VALIDATE_PHONE_SUCCESS,
-	ACCOUNT_RECOVERY_SETTINGS_VALIDATE_PHONE_FAILED,
 	BILLING_RECEIPT_EMAIL_SEND_FAILURE,
 	BILLING_RECEIPT_EMAIL_SEND_SUCCESS,
 	BILLING_TRANSACTION_REQUEST_FAILURE,
@@ -32,19 +23,11 @@ import {
 	INVITE_RESEND_REQUEST_FAILURE,
 	INVITES_DELETE_REQUEST_SUCCESS,
 	INVITES_DELETE_REQUEST_FAILURE,
-	KEYRING_CONNECTION_DELETE,
-	KEYRING_CONNECTION_DELETE_FAILURE,
 	POST_DELETE_FAILURE,
 	POST_DELETE_SUCCESS,
 	POST_RESTORE_FAILURE,
 	POST_RESTORE_SUCCESS,
 	POST_SAVE_SUCCESS,
-	PUBLICIZE_CONNECTION_CREATE,
-	PUBLICIZE_CONNECTION_CREATE_FAILURE,
-	PUBLICIZE_CONNECTION_DELETE,
-	PUBLICIZE_CONNECTION_DELETE_FAILURE,
-	PUBLICIZE_CONNECTION_UPDATE,
-	PUBLICIZE_CONNECTION_UPDATE_FAILURE,
 	SITE_DELETE,
 	SITE_DELETE_FAILURE,
 	SITE_DELETE_RECEIVE,
@@ -52,18 +35,6 @@ import {
 	SITE_MONITOR_SETTINGS_UPDATE_FAILURE,
 } from 'calypso/state/action-types';
 import { purchasesRoot, billingHistoryReceipt } from 'calypso/me/purchases/paths';
-
-import {
-	onAccountRecoverySettingsFetchFailed,
-	onAccountRecoverySettingsUpdateFailed,
-	onAccountRecoverySettingsDeleteFailed,
-	onAccountRecoverySettingsUpdateSuccess,
-	onAccountRecoverySettingsDeleteSuccess,
-	onResentAccountRecoveryEmailValidationSuccess,
-	onResentAccountRecoveryEmailValidationFailed,
-	onAccountRecoveryPhoneValidationSuccess,
-	onAccountRecoveryPhoneValidationFailed,
-} from './account-recovery';
 
 /**
  * Handlers
@@ -168,60 +139,6 @@ export const onPostSaveSuccess = ( { post, savedPost } ) => ( dispatch ) => {
 	}
 };
 
-export const onPublicizeConnectionCreate = ( { connection } ) =>
-	successNotice(
-		translate( 'The %(service)s account was successfully connected.', {
-			args: { service: connection.label },
-			context: 'Sharing: Publicize connection confirmation',
-		} ),
-		{ id: 'publicize' }
-	);
-
-export const onPublicizeConnectionCreateFailure = ( { error } ) =>
-	errorNotice(
-		error.message ||
-			translate( 'An error occurred while connecting the account.', {
-				context: 'Sharing: Publicize connection confirmation',
-			} ),
-		{ id: 'publicize' }
-	);
-
-export const onPublicizeConnectionDelete = ( { connection } ) =>
-	successNotice(
-		translate( 'The %(service)s account was successfully disconnected.', {
-			args: { service: connection.label },
-			context: 'Sharing: Publicize connection confirmation',
-		} ),
-		{ id: 'publicize' }
-	);
-
-export const onPublicizeConnectionDeleteFailure = ( { error } ) =>
-	errorNotice(
-		translate( 'The %(service)s account was unable to be disconnected.', {
-			args: { service: error.label },
-			context: 'Sharing: Publicize connection confirmation',
-		} ),
-		{ id: 'publicize' }
-	);
-
-export const onPublicizeConnectionUpdate = ( { connection } ) =>
-	successNotice(
-		translate( 'The %(service)s account was successfully updated.', {
-			args: { service: connection.label },
-			context: 'Sharing: Publicize connection confirmation',
-		} ),
-		{ id: 'publicize' }
-	);
-
-export const onPublicizeConnectionUpdateFailure = ( { error } ) =>
-	errorNotice(
-		translate( 'The %(service)s account was unable to be updated.', {
-			args: { service: error.label },
-			context: 'Sharing: Publicize reconnection confirmation',
-		} ),
-		{ id: 'publicize' }
-	);
-
 const onGuidedTransferHostDetailsSaveSuccess = () =>
 	successNotice( translate( 'Thanks for confirming those details!' ) );
 
@@ -295,15 +212,6 @@ export const onBillingTransactionRequestFailure = ( { transactionId, error } ) =
  */
 
 export const handlers = {
-	[ ACCOUNT_RECOVERY_SETTINGS_FETCH_FAILED ]: onAccountRecoverySettingsFetchFailed,
-	[ ACCOUNT_RECOVERY_SETTINGS_UPDATE_SUCCESS ]: onAccountRecoverySettingsUpdateSuccess,
-	[ ACCOUNT_RECOVERY_SETTINGS_UPDATE_FAILED ]: onAccountRecoverySettingsUpdateFailed,
-	[ ACCOUNT_RECOVERY_SETTINGS_DELETE_SUCCESS ]: onAccountRecoverySettingsDeleteSuccess,
-	[ ACCOUNT_RECOVERY_SETTINGS_DELETE_FAILED ]: onAccountRecoverySettingsDeleteFailed,
-	[ ACCOUNT_RECOVERY_SETTINGS_RESEND_VALIDATION_SUCCESS ]: onResentAccountRecoveryEmailValidationSuccess,
-	[ ACCOUNT_RECOVERY_SETTINGS_RESEND_VALIDATION_FAILED ]: onResentAccountRecoveryEmailValidationFailed,
-	[ ACCOUNT_RECOVERY_SETTINGS_VALIDATE_PHONE_SUCCESS ]: onAccountRecoveryPhoneValidationSuccess,
-	[ ACCOUNT_RECOVERY_SETTINGS_VALIDATE_PHONE_FAILED ]: onAccountRecoveryPhoneValidationFailed,
 	[ BILLING_RECEIPT_EMAIL_SEND_FAILURE ]: onBillingReceiptEmailSendFailure,
 	[ BILLING_RECEIPT_EMAIL_SEND_SUCCESS ]: onBillingReceiptEmailSendSuccess,
 	[ BILLING_TRANSACTION_REQUEST_FAILURE ]: onBillingTransactionRequestFailure,
@@ -313,19 +221,11 @@ export const handlers = {
 	[ INVITES_DELETE_REQUEST_SUCCESS ]: onDeleteInvitesSuccess,
 	[ INVITES_DELETE_REQUEST_FAILURE ]: onDeleteInvitesFailure,
 	[ INVITE_RESEND_REQUEST_FAILURE ]: onInviteResendRequestFailure,
-	[ KEYRING_CONNECTION_DELETE ]: onPublicizeConnectionDelete,
-	[ KEYRING_CONNECTION_DELETE_FAILURE ]: onPublicizeConnectionDeleteFailure,
 	[ POST_DELETE_FAILURE ]: onPostDeleteFailure,
 	[ POST_DELETE_SUCCESS ]: onPostDeleteSuccess,
 	[ POST_RESTORE_FAILURE ]: onPostRestoreFailure,
 	[ POST_RESTORE_SUCCESS ]: onPostRestoreSuccess,
 	[ POST_SAVE_SUCCESS ]: onPostSaveSuccess,
-	[ PUBLICIZE_CONNECTION_CREATE ]: onPublicizeConnectionCreate,
-	[ PUBLICIZE_CONNECTION_CREATE_FAILURE ]: onPublicizeConnectionCreateFailure,
-	[ PUBLICIZE_CONNECTION_DELETE ]: onPublicizeConnectionDelete,
-	[ PUBLICIZE_CONNECTION_DELETE_FAILURE ]: onPublicizeConnectionDeleteFailure,
-	[ PUBLICIZE_CONNECTION_UPDATE ]: onPublicizeConnectionUpdate,
-	[ PUBLICIZE_CONNECTION_UPDATE_FAILURE ]: onPublicizeConnectionUpdateFailure,
 	[ GUIDED_TRANSFER_HOST_DETAILS_SAVE_SUCCESS ]: onGuidedTransferHostDetailsSaveSuccess,
 	[ SITE_DELETE ]: onSiteDelete,
 	[ SITE_DELETE_FAILURE ]: onSiteDeleteFailure,

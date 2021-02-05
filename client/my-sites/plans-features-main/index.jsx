@@ -9,10 +9,14 @@ import classNames from 'classnames';
 import { connect } from 'react-redux';
 
 /**
+ * WordPress dependencies
+ */
+import warn from '@wordpress/warning';
+
+/**
  * Internal dependencies
  */
 import AsyncLoad from 'calypso/components/async-load';
-import warn from 'calypso/lib/warn';
 import PlanFeatures from 'calypso/my-sites/plan-features';
 import {
 	JETPACK_PLANS,
@@ -41,7 +45,7 @@ import WpcomFAQ from './wpcom-faq';
 import QueryPlans from 'calypso/components/data/query-plans';
 import QuerySites from 'calypso/components/data/query-sites';
 import QuerySitePlans from 'calypso/components/data/query-site-plans';
-import { isEnabled } from 'calypso/config';
+import { isEnabled } from '@automattic/calypso-config';
 import {
 	chooseDefaultCustomerType,
 	findPlansKeys,
@@ -146,6 +150,7 @@ export class PlansFeaturesMain extends Component {
 			siteId,
 			plansWithScroll,
 			isReskinned,
+			isInVerticalScrollingPlansExperiment,
 		} = this.props;
 
 		const plans = this.getPlansForPlanFeatures();
@@ -189,6 +194,7 @@ export class PlansFeaturesMain extends Component {
 					} ) }
 					siteId={ siteId }
 					isReskinned={ isReskinned }
+					isInVerticalScrollingPlansExperiment={ isInVerticalScrollingPlansExperiment }
 				/>
 			</div>
 		);
@@ -299,6 +305,7 @@ export class PlansFeaturesMain extends Component {
 			selectedPlan,
 			plansWithScroll,
 			withWPPlanTabs,
+			isAllPaidPlansShown,
 		} = this.props;
 
 		const isPlanOneOfType = ( plan, types ) =>
@@ -334,9 +341,9 @@ export class PlansFeaturesMain extends Component {
 			);
 		}
 
-		if ( ! withWPPlanTabs ) {
+		if ( ! withWPPlanTabs || isAllPaidPlansShown ) {
 			return plans.filter( ( plan ) =>
-				isPlanOneOfType( plan, [ TYPE_FREE, TYPE_PERSONAL, TYPE_PREMIUM, TYPE_BUSINESS ] )
+				isPlanOneOfType( plan, [ TYPE_PERSONAL, TYPE_PREMIUM, TYPE_BUSINESS, TYPE_ECOMMERCE ] )
 			);
 		}
 
@@ -484,6 +491,7 @@ PlansFeaturesMain.propTypes = {
 	siteId: PropTypes.number,
 	siteSlug: PropTypes.string,
 	withWPPlanTabs: PropTypes.bool,
+	isAllPaidPlansShown: PropTypes.bool,
 	plansWithScroll: PropTypes.bool,
 	planTypes: PropTypes.array,
 	customHeader: PropTypes.node,

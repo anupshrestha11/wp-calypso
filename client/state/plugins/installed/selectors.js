@@ -6,7 +6,7 @@ import { every, filter, find, get, pick, reduce, some, sortBy, values } from 'lo
 /**
  * Internal dependencies
  */
-import createSelector from 'calypso/lib/create-selector';
+import { createSelector } from '@automattic/state-utils';
 import {
 	getSite,
 	getSiteTitle,
@@ -35,7 +35,7 @@ const _filters = {
 	},
 	updates: function ( plugin ) {
 		return some( plugin.sites, function ( site ) {
-			return site.update;
+			return site.update && ! site.update.recentlyUpdated;
 		} );
 	},
 	isEqual: function ( pluginSlug, plugin ) {
@@ -98,6 +98,14 @@ export function getPluginsWithUpdates( state, siteIds ) {
 		version: plugin?.update?.new_version,
 		type: 'plugin',
 	} ) );
+}
+
+export function getPluginsOnSites( state, plugins ) {
+	return Object.values( plugins ).reduce( ( acc, plugin ) => {
+		const siteIds = Object.keys( plugin.sites );
+		acc[ plugin.slug ] = getPluginOnSites( state, siteIds, plugin.slug );
+		return acc;
+	}, {} );
 }
 
 export function getPluginOnSites( state, siteIds, pluginSlug ) {

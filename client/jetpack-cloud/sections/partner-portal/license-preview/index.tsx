@@ -19,6 +19,7 @@ import ClipboardButton from 'calypso/components/forms/clipboard-button';
 import Gridicon from 'calypso/components/gridicon';
 import FormattedDate from 'calypso/components/formatted-date';
 import LicenseListItem from 'calypso/jetpack-cloud/sections/partner-portal/license-list-item';
+import LicenseDetails from 'calypso/jetpack-cloud/sections/partner-portal/license-details';
 
 /**
  * Style dependencies
@@ -32,6 +33,8 @@ interface Props {
 	issuedAt: string;
 	attachedAt: string;
 	revokedAt: string;
+	username: string;
+	blogId: number;
 }
 
 export default function LicensePreview( {
@@ -41,6 +44,8 @@ export default function LicensePreview( {
 	issuedAt,
 	attachedAt,
 	revokedAt,
+	username,
+	blogId,
 }: Props ): ReactElement {
 	const translate = useTranslate();
 	const [ isOpen, setOpen ] = useState( false );
@@ -138,6 +143,17 @@ export default function LicensePreview( {
 					</Button>
 				</div>
 			</LicenseListItem>
+
+			{ isOpen && (
+				<LicenseDetails
+					licenseKey={ licenseKey }
+					issuedOn={ issuedAt }
+					attachedOn={ attachedAt }
+					revokedOn={ revokedAt }
+					username={ username }
+					blogId={ blogId }
+				/>
+			) }
 		</div>
 	);
 }
@@ -172,9 +188,9 @@ export function LicensePreviewPlaceholder(): ReactElement {
 					<div />
 				</div>
 
-				<div></div>
+				<div />
 
-				<div></div>
+				<div />
 			</LicenseListItem>
 		</div>
 	);

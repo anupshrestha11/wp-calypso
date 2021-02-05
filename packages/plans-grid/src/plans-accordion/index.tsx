@@ -4,17 +4,20 @@
 import React, { useState } from 'react';
 import { useSelect } from '@wordpress/data';
 import { useI18n } from '@automattic/react-i18n';
-import type { DomainSuggestions, Plans, WPCOMFeatures } from '@automattic/data-stores';
 import { Button, SVG, Path } from '@wordpress/components';
 import { Icon } from '@wordpress/icons';
+
+import type { DomainSuggestions, Plans, WPCOMFeatures } from '@automattic/data-stores';
 
 /**
  * Internal dependencies
  */
 import PlanItem from '../plans-accordion-item';
 import PlanItemPlaceholder from '../plans-accordion-item/plans-item-placeholder';
-import { PLANS_STORE, WPCOM_FEATURES_STORE } from '../constants';
-import type { DisabledPlansMap } from 'src/plans-table/types';
+import { PLANS_STORE, WPCOM_FEATURES_STORE } from '../stores';
+import { useSupportedPlans } from '../hooks';
+
+import type { DisabledPlansMap } from '../plans-table/types';
 
 /**
  * Style dependencies
@@ -37,9 +40,10 @@ export interface Props {
 	currentDomain?: DomainSuggestions.DomainSuggestion;
 	disabledPlans?: DisabledPlansMap;
 	locale: string;
+	billingPeriod: Plans.PlanBillingPeriod;
 }
 
-const PlansTable: React.FunctionComponent< Props > = ( {
+const PlansAccordion: React.FunctionComponent< Props > = ( {
 	selectedFeatures = [],
 	selectedPlanProductId,
 	onPlanSelect,
@@ -47,24 +51,29 @@ const PlansTable: React.FunctionComponent< Props > = ( {
 	currentDomain,
 	disabledPlans,
 	locale,
+	billingPeriod,
 } ) => {
 	const { __ } = useI18n();
 
-	const supportedPlans = useSelect( ( select ) =>
-		select( PLANS_STORE ).getSupportedPlans( locale )
-	);
+	const { supportedPlans } = useSupportedPlans( locale, billingPeriod );
 
 	const isLoading = ! supportedPlans?.length;
 	const placeholderPlans = [ 1, 2, 3, 4 ];
 
 	// Primary plan
-	const popularPlan = useSelect( ( select ) => select( PLANS_STORE ).getDefaultPaidPlan( locale ) );
+	const { popularPlan, getPlanProduct } = useSelect( ( select ) => {
+		const plansStore = select( PLANS_STORE );
+		return {
+			popularPlan: plansStore.getDefaultPaidPlan( locale ),
+			getPlanProduct: plansStore.getPlanProduct,
+		};
+	} );
 	const recommendedPlanSlug = useSelect( ( select ) =>
 		select( WPCOM_FEATURES_STORE ).getRecommendedPlanSlug( selectedFeatures )
 	);
 
 	const recommendedPlan = useSelect( ( select ) =>
-		select( PLANS_STORE ).getPlanByPeriodAgnosticSlug( recommendedPlanSlug )
+		select( PLANS_STORE ).getPlanByPeriodAgnosticSlug( recommendedPlanSlug, locale )
 	);
 
 	const primaryPlan = recommendedPlan || popularPlan;
@@ -118,6 +127,7 @@ const PlansTable: React.FunctionComponent< Props > = ( {
 								name={ primaryPlan?.title.toString() }
 								description={ primaryPlan?.description.toString() }
 								features={ primaryPlan.features ?? [] }
+								billingPeriod={ billingPeriod }
 								domain={ currentDomain }
 								badge={ badge }
 								isFree={ primaryPlan.isFree }
@@ -125,7 +135,8 @@ const PlansTable: React.FunctionComponent< Props > = ( {
 								isPrimary
 								isSelected={
 									!! selectedPlanProductId &&
-									primaryPlan.productIds.indexOf( selectedPlanProductId ) > -1
+									selectedPlanProductId ===
+										getPlanProduct( primaryPlan.periodAgnosticSlug, billingPeriod )?.productId
 								}
 								onSelect={ onPlanSelect }
 								onPickDomainClick={ onPickDomainClick }
@@ -155,13 +166,18 @@ const PlansTable: React.FunctionComponent< Props > = ( {
 								name={ plan?.title.toString() }
 								description={ plan?.description.toString() }
 								features={ plan.features ?? [] }
+								billingPeriod={ billingPeriod }
 								domain={ currentDomain }
 								isFree={ plan.isFree }
 								isOpen={
 									openPlans.indexOf( plan.periodAgnosticSlug ) > -1 &&
 									! disabledPlans?.[ plan.periodAgnosticSlug ]
 								}
-								isSelected={ plan.productIds.indexOf( selectedPlanProductId as never ) > -1 }
+								isSelected={
+									!! selectedPlanProductId &&
+									selectedPlanProductId ===
+										getPlanProduct( plan.periodAgnosticSlug, billingPeriod )?.productId
+								}
 								onSelect={ onPlanSelect }
 								onPickDomainClick={ onPickDomainClick }
 								onToggle={ handleToggle }
@@ -173,4 +189,4 @@ const PlansTable: React.FunctionComponent< Props > = ( {
 	);
 };
 
-export default PlansTable;
+export default PlansAccordion;

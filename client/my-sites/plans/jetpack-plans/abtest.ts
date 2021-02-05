@@ -1,10 +1,9 @@
 /**
  * Internal dependencies
  */
-import { abtest } from 'calypso/lib/abtest';
 import { getUrlParts } from 'calypso/lib/url/url-parts';
 
-const VERSIONS = [ 'v1', 'v2', 'i5', 'spp' ];
+const VERSIONS = [ 'i5', 'spp' ];
 const DEFAULT_VERSION = 'i5';
 
 /**
@@ -25,13 +24,8 @@ export const getJetpackCROActiveVersion = (): string => {
 		}
 	}
 
-	// Otherwise, check for the assigned A/B test value
-	const variant = abtest( 'jetpackSimplifyPricingPage' );
-
-	switch ( variant ) {
-		case 'test':
-			return 'spp';
-		default:
-			return DEFAULT_VERSION;
-	}
+	// The `spp` iteration still exists for now,
+	// but the test is over, so we don't need (or want) to call `abtest`.
+	// Instead, always return the default iteration.
+	return DEFAULT_VERSION;
 };

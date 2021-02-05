@@ -6,11 +6,11 @@ import { compact, get, isArray, isObject, isFunction } from 'lodash';
 import page from 'page';
 import React, { createElement, Fragment } from 'react';
 import formatCurrency from '@automattic/format-currency';
+import { createSelector } from '@automattic/state-utils';
 
 /**
  * Internal dependencies
  */
-import createSelector from 'calypso/lib/create-selector';
 import { getFeatureByKey, getFeatureCategoryByKey } from 'calypso/lib/plans/features-list';
 import {
 	DAILY_PRODUCTS,
@@ -58,7 +58,7 @@ import { getJetpackProductTagline } from 'calypso/lib/products-values/get-jetpac
 import { getJetpackProductCallToAction } from 'calypso/lib/products-values/get-jetpack-product-call-to-action';
 import { getJetpackProductDescription } from 'calypso/lib/products-values/get-jetpack-product-description';
 import { getJetpackProductShortName } from 'calypso/lib/products-values/get-jetpack-product-short-name';
-import config from 'calypso/config';
+import config from '@automattic/calypso-config';
 import { managePurchase } from 'calypso/me/purchases/paths';
 import { getJetpackCROActiveVersion } from 'calypso/my-sites/plans/jetpack-plans/abtest';
 import { MORE_FEATURES_LINK } from 'calypso/my-sites/plans/jetpack-plans/constants';
@@ -244,67 +244,8 @@ export function productButtonLabel(
 	);
 }
 
-export function productButtonLabelAlt(
-	product: SelectorProduct,
-	isOwned: boolean,
-	isItemPlanFeature: boolean,
-	isUpgradeableToYearly: boolean,
-	currentPlan?: SitePlan | null
-): TranslateResult {
-	if ( isUpgradeableToYearly ) {
-		return translate( 'Upgrade to Yearly' );
-	}
-
-	if (
-		isOwned ||
-		( currentPlan && planHasFeature( currentPlan.product_slug, product.productSlug ) )
-	) {
-		return product.type !== ITEM_TYPE_PRODUCT
-			? translate( 'Manage Plan' )
-			: translate( 'Manage Subscription' );
-	}
-
-	const { buttonLabel } = product;
-
-	// If it's a product with options, we want to use the name of the option
-	// to label the button.
-	const displayName = getProductWithOptionDisplayName( product, isOwned, isItemPlanFeature );
-	if ( getOptionFromSlug( product.productSlug ) ) {
-		return translate( 'Get {{name/}}', {
-			components: {
-				name: createElement( Fragment, {}, displayName ),
-			},
-			comment: '{{name/}} is the name of a product',
-		} );
-	}
-
-	return (
-		buttonLabel ??
-		translate( 'Get {{name/}}', {
-			components: {
-				name: createElement( Fragment, {}, displayName ),
-			},
-			comment: '{{name/}} is the name of a product',
-		} )
-	);
-}
-
 export function slugIsFeaturedProduct( productSlug: string ): boolean {
 	return FEATURED_PRODUCTS.includes( productSlug );
-}
-
-export function productBadgeLabelAlt(
-	product: SelectorProduct,
-	isOwned: boolean,
-	currentPlan?: SitePlan | null
-): TranslateResult | undefined {
-	if ( isOwned ) {
-		return translate( 'You own this' );
-	}
-
-	if ( currentPlan && planHasFeature( currentPlan.product_slug, product.productSlug ) ) {
-		return translate( 'Included in your plan' );
-	}
 }
 
 /**
@@ -375,9 +316,16 @@ export function productTooltip(
 
 export function productAboveButtonText(
 	product: SelectorProduct,
-	siteProduct?: SiteProduct
+	siteProduct?: SiteProduct,
+	isOwned?: boolean,
+	isIncludedInPlan?: boolean
 ): TranslateResult | null {
-	if ( siteProduct && JETPACK_SEARCH_PRODUCTS.includes( product.productSlug ) ) {
+	if (
+		! isOwned &&
+		! isIncludedInPlan &&
+		siteProduct &&
+		JETPACK_SEARCH_PRODUCTS.includes( product.productSlug )
+	) {
 		return translate( '*estimated price based off of %(records)s records', {
 			args: {
 				records: numberFormat( siteProduct.tierUsage, 0 ),
@@ -476,9 +424,7 @@ export function itemToSelectorProduct(
 		}
 
 		const currentCROvariant = getJetpackCROActiveVersion();
-		const iconSlug = [ 'v1', 'v2', 'i5' ].includes( currentCROvariant )
-			? `${ yearlyProductSlug || item.product_slug }_v2_dark`
-			: `${ yearlyProductSlug || item.product_slug }_v2`;
+		const iconSlug = `${ yearlyProductSlug || item.product_slug }_v2_dark`;
 
 		return {
 			productSlug: item.product_slug,

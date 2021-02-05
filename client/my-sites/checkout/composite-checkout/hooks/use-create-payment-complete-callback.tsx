@@ -12,6 +12,7 @@ import type {
 	PaymentCompleteCallbackArguments,
 } from '@automattic/composite-checkout';
 import type { ResponseCart } from '@automattic/shopping-cart';
+import { resolveDeviceTypeByViewPort } from '@automattic/viewport';
 
 /**
  * Internal dependencies
@@ -176,7 +177,7 @@ export default function useCreatePaymentCompleteCallback( {
 					fetchSitesAndUser(
 						domainName,
 						() => {
-							page.redirect( url );
+							performRedirect( url );
 						},
 						reduxStore
 					);
@@ -191,7 +192,9 @@ export default function useCreatePaymentCompleteCallback( {
 				try {
 					window.localStorage.removeItem( 'shoppingCart' );
 					window.localStorage.removeItem( 'siteParams' );
-				} catch ( err ) {}
+				} catch ( err ) {
+					debug( 'error while clearing localStorage cart' );
+				}
 
 				// We use window.location instead of page.redirect() so that the cookies are detected on fresh page load.
 				// Using page.redirect() will take to the log in page which we don't want.
@@ -199,7 +202,7 @@ export default function useCreatePaymentCompleteCallback( {
 				return;
 			}
 
-			page.redirect( url );
+			performRedirect( url );
 		},
 		[
 			previousRoute,
@@ -226,9 +229,17 @@ export default function useCreatePaymentCompleteCallback( {
 	);
 }
 
+function performRedirect( url: string ): void {
+	try {
+		page( url );
+	} catch ( err ) {
+		window.location.href = url;
+	}
+}
+
 function displayRenewalSuccessNotice(
 	responseCart: ResponseCart,
-	purchases: Record< number, Purchase >,
+	purchases: Record< number, Purchase[] >,
 	translate: ReturnType< typeof useTranslate >,
 	moment: ReturnType< typeof useLocalizedMoment >,
 	reduxDispatch: ReturnType< typeof useDispatch >
@@ -236,7 +247,7 @@ function displayRenewalSuccessNotice(
 	const renewalItem = getRenewalItems( responseCart )[ 0 ];
 	// group all purchases into an array
 	const purchasedProducts = Object.values( purchases ?? {} ).reduce(
-		( result: Purchase[], value: Purchase ) => [ ...result, value ],
+		( result: Purchase[], value: Purchase[] ) => [ ...result, ...value ],
 		[]
 	);
 	// and take the first product which matches the product id of the renewalItem
@@ -265,7 +276,7 @@ function displayRenewalSuccessNotice(
 						},
 					}
 				),
-				{ persistent: true }
+				{ displayOnNextPage: true }
 			)
 		);
 		return;
@@ -286,7 +297,7 @@ function displayRenewalSuccessNotice(
 					},
 				}
 			),
-			{ persistent: true }
+			{ displayOnNextPage: true }
 		)
 	);
 }
@@ -307,12 +318,15 @@ function recordPaymentCompleteAnalytics( {
 	const wpcomPaymentMethod = paymentMethodId
 		? translateCheckoutPaymentMethodToWpcomPaymentMethod( paymentMethodId )
 		: null;
+
+	const device = resolveDeviceTypeByViewPort();
 	reduxDispatch(
 		recordTracksEvent( 'calypso_checkout_payment_success', {
 			coupon_code: responseCart.coupon,
 			currency: responseCart.currency,
 			payment_method: wpcomPaymentMethod || '',
 			total_cost: responseCart.total_cost,
+			device,
 		} )
 	);
 	recordPurchase( {
@@ -326,6 +340,7 @@ function recordPaymentCompleteAnalytics( {
 		},
 		orderId: transactionResult?.receipt_id,
 	} );
+
 	return reduxDispatch(
 		recordTracksEvent( 'calypso_checkout_composite_payment_complete', {
 			redirect_url: redirectUrl,
@@ -333,6 +348,7 @@ function recordPaymentCompleteAnalytics( {
 			total: responseCart.total_cost_integer,
 			currency: responseCart.currency,
 			payment_method: wpcomPaymentMethod || '',
+			device,
 		} )
 	);
 }

@@ -15,20 +15,24 @@ import * as resolvers from './resolvers';
 import { controls } from '../wpcom-request-controls';
 
 export type { State };
-export type { Plan, PlanSlug, PlanProduct } from './types';
-export type { PlanPath } from './types';
+export type {
+	Plan,
+	PlanSlug,
+	StorePlanSlug,
+	PlanProduct,
+	PlanFeature,
+	PlanPath,
+	PlanBillingPeriod,
+	PlanSimplifiedFeature,
+} from './types';
 
-// plansPaths is used to construct the route that accepts plan slugs like (/beginner, /business, etc..)
+// plansSlugs is a list with the identifiers for each plan and they are agnostic of billing period; eg: 'free', 'personal'
+// plansSlugs is also used to construct the route that accepts plan slugs like '/free', '/personal', '/business'
+// plansProductSlugs is a list with the identifiers for each plan product (including the billing period); eg: 'personal-bundle', 'personal-bundle-monthly'
+// TIMELESS_* is the slug for each plan
 export {
-	PLAN_FREE,
-	PLAN_PERSONAL,
-	PLAN_PREMIUM,
-	PLAN_BUSINESS,
-	PLAN_ECOMMERCE,
-	plansPaths,
-} from './constants';
-
-export {
+	plansSlugs,
+	plansProductSlugs,
 	TIMELESS_PLAN_FREE,
 	TIMELESS_PLAN_PERSONAL,
 	TIMELESS_PLAN_PREMIUM,

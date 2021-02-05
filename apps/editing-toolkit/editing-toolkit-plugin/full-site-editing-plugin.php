@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WordPress.com Editing Toolkit
  * Description: Enhances your page creation workflow within the Block Editor.
- * Version: 2.13
+ * Version: 2.17
  * Author: Automattic
  * Author URI: https://automattic.com/wordpress-plugins/
  * License: GPLv2 or later
@@ -35,7 +35,7 @@ namespace A8C\FSE;
  *
  * @var string
  */
-define( 'PLUGIN_VERSION', '2.13' );
+define( 'PLUGIN_VERSION', '2.17' );
 
 // Always include these helper files for dotcom FSE.
 require_once __DIR__ . '/dotcom-fse/helpers.php';
@@ -141,20 +141,12 @@ function load_common_module() {
 add_action( 'plugins_loaded', __NAMESPACE__ . '\load_common_module' );
 
 /**
- * Sigh: load_editor_site_launch
+ * Load Editor Site Launch
  */
 function load_editor_site_launch() {
 	require_once __DIR__ . '/editor-site-launch/index.php';
 }
 add_action( 'plugins_loaded', __NAMESPACE__ . '\load_editor_site_launch' );
-
-/**
- * Sigh: load_editor_gutenboarding_launch
- */
-function load_editor_gutenboarding_launch() {
-	require_once __DIR__ . '/editor-gutenboarding-launch/index.php';
-}
-add_action( 'plugins_loaded', __NAMESPACE__ . '\load_editor_gutenboarding_launch' );
 
 /**
  * Add front-end CoBlocks gallery block scripts.
@@ -241,13 +233,7 @@ add_action( 'plugins_loaded', __NAMESPACE__ . '\load_blog_posts_block' );
  * Load WPCOM Block Editor NUX
  */
 function load_wpcom_block_editor_nux() {
-	// Show the Welcome Tour for any sandbox/site with SHOW_WELCOME_TOUR constant or filter setting.
-	if ( defined( 'SHOW_WELCOME_TOUR' ) && SHOW_WELCOME_TOUR || apply_filters( 'a8c_enable_wpcom_welcome_tour', false ) ) {
-		require_once __DIR__ . '/wpcom-block-editor-welcome-tour/class-wpcom-block-editor-welcome-tour.php';
-		return;
-	} else {
-		require_once __DIR__ . '/wpcom-block-editor-nux/class-wpcom-block-editor-nux.php';
-	}
+	require_once __DIR__ . '/wpcom-block-editor-nux/class-wpcom-block-editor-nux.php';
 }
 add_action( 'plugins_loaded', __NAMESPACE__ . '\load_wpcom_block_editor_nux' );
 
@@ -283,21 +269,6 @@ function load_wpcom_block_patterns_modifications() {
 	}
 }
 add_action( 'plugins_loaded', __NAMESPACE__ . '\load_wpcom_block_patterns_modifications' );
-
-
-/**
- * Load Premium Content Block
- */
-function load_premium_content() {
-	/**
-	 * Disabled until we're ready to disable the premium content plugin in mp-plugins/earn
-	 */
-	if ( function_exists( '\A8C\FSE\Earn\PremiumContent\premium_content_block_init' ) ) {
-		return;
-	}
-	require_once __DIR__ . '/premium-content/premium-content.php';
-}
-add_action( 'plugins_loaded', __NAMESPACE__ . '\load_premium_content' );
 
 /**
  * Load Block Inserter Modifications module
