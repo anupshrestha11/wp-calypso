@@ -67,6 +67,19 @@ const browserslistEnv = process.env.BROWSERSLIST_ENV || defaultBrowserslistEnv;
 const extraPath = browserslistEnv === 'defaults' ? 'fallback' : browserslistEnv;
 const cachePath = path.resolve( '.cache', extraPath );
 
+console.log(
+	'Cache version ',
+	[
+		shouldBuildChunksMap,
+		shouldMinify,
+		process.env.ENTRY_LIMIT,
+		process.env.SECTION_LIMIT,
+		process.env.SOURCEMAP,
+		process.env.NODE_ENV,
+		process.env.CALYPSO_ENV,
+	].join( '-' )
+);
+
 function filterEntrypoints( entrypoints ) {
 	/* eslint-disable no-console */
 	if ( ! process.env.ENTRY_LIMIT ) {
@@ -409,7 +422,7 @@ const webpackConfig = {
 					].join( '-' ),
 					cacheDirectory: path.resolve( cachePath, 'webpack' ),
 					buildDependencies: {
-						config: [ __filename ],
+						config: [ __filename, path.resolve( 'babel.config.js' ) ],
 					},
 				},
 				snapshot: {
